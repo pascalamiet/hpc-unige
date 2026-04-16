@@ -220,11 +220,50 @@ node_modules/
 .env.*
 EOF
     ok "Created $EXCLUDE_FILE"
-    echo "  Edit it to customise which files are excluded from syncing."
   fi
+
+  # ── Add custom ignore patterns to the exclude file ──
+  echo ""
+  echo "  Default patterns added. Enter additional patterns to ignore (one per line)."
+  echo "  Examples: data/  *.log  /results/  secret.txt"
+  echo "  Press Enter on an empty line when done."
+  echo ""
+  custom_count=0
+  while true; do
+    read -rp "  Ignore pattern (or Enter to finish): " pattern
+    [[ -z "$pattern" ]] && break
+    if [[ "$pattern" == *"'"* ]]; then
+      warn "Pattern contains a single quote — skipped (not supported)"
+      continue
+    fi
+    echo "$pattern" >> "$EXCLUDE_FILE"
+    ok "  Added: $pattern"
+    (( custom_count++ )) || true
+  done
+  [[ $custom_count -gt 0 ]] && echo "  $custom_count custom pattern(s) added to $EXCLUDE_FILE"
+  echo "  Edit $EXCLUDE_FILE at any time to adjust patterns."
 
   EXCLUDE_FLAG="--exclude-from=\"${EXCLUDE_FILE}\""
   FINAL_FLAGS="$FINAL_FLAGS $EXCLUDE_FLAG"
+else
+  # No exclude file — offer inline --exclude flags for quick one-offs
+  echo ""
+  echo "  Enter patterns to exclude inline (one per line), or press Enter to skip."
+  echo "  Examples: data/  *.log  secret.txt"
+  echo ""
+  inline_count=0
+  while true; do
+    read -rp "  Exclude pattern (or Enter to skip): " pattern
+    [[ -z "$pattern" ]] && break
+    if [[ "$pattern" == *"'"* ]]; then
+      warn "Pattern contains a single quote — skipped (not supported)"
+      continue
+    fi
+    FINAL_FLAGS="$FINAL_FLAGS --exclude='$pattern'"
+    ok "  Added: --exclude='$pattern'"
+    (( inline_count++ )) || true
+  done
+  [[ $inline_count -gt 0 ]] && echo "  $inline_count inline exclude pattern(s) added."
 fi
 
 # ─── E. Cron job ─────────────────────────────────────────────────────────────
