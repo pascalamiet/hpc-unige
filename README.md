@@ -9,6 +9,8 @@ Personal reference docs for the [UNIGE HPC clusters](https://doc.eresearch.unige
 ```
 hpc-unige/
 ├── guides/          — Generic how-to docs (SSH, file transfer, Slurm)
+├── skills/          — LLM skill scripts for common HPC workflows
+├── sync/            — sync-folder tool: register projects for rsync push/pull
 └── wiki/            — LLM-maintained wiki, ingested from official UNIGE docs
     ├── _raw_/       — Source documents (immutable)
     ├── _schema_/    — Wiki operating rules
@@ -18,6 +20,10 @@ hpc-unige/
 ```
 
 **guides/** contains polished, generic instructions that should work for any UNIGE HPC user. They don't include personal usernames or paths — those belong in your own local notes.
+
+**skills/** holds LLM skill scripts that make common HPC tasks interactive — generating job scripts, finding modules, tuning resources. See [🤖 LLM skills](#-llm-skills) below.
+
+**sync/** is a small shell tool that registers a local project folder for one-command rsync syncing to the cluster. See [📂 Syncing projects](#-syncing-projects) below.
 
 **wiki/** is an [LM-maintained knowledge base](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f) (as introduced by Andrej Karpathy) synthesized from the official UNIGE HPC documentation. It's meant to be queried and extended incrementally, not read cover to cover. Having it around will increase the accuracy of responses you get from LLMs, you don't have to read what is in it yourself.
 
@@ -87,6 +93,47 @@ The wiki is designed to grow incrementally. To add new sources:
 3. The LLM reads `wiki/_schema_/SCHEMA.md`, creates or updates pages in `wiki/_wiki_/`, updates `wiki/index.md`, and appends to `wiki/log.md`
 
 See [wiki/README.md](wiki/README.md) for the full wiki workflow.
+
+---
+
+## 🤖 LLM skills
+
+`skills/` contains prompt scripts that turn common HPC tasks into guided, interactive workflows when used with an LLM (e.g. Claude Code).
+
+| Skill | Invoke with | What it does |
+|-------|-------------|--------------|
+| [hpc-job](skills/hpc-job/) | *"create a slurm job script"* | Asks 10 questions (partition, time, CPUs, memory, GPU, email…) and writes a ready-to-submit `job.sh` |
+| [hpc-module](skills/hpc-module/) | *"find the module for Python"* | Runs `module spider` over SSH and returns the exact `module load` line to paste into your script |
+| [hpc-resources](skills/hpc-resources/) | *"tune my job resources"* | Reads `seff` output for a completed job and gives paste-ready `#SBATCH` recommendations for time, CPUs, and memory |
+
+Each skill lives in its own folder with a `SKILL.md` that drives the LLM interaction. To use them, point your LLM at this repo and invoke the skill by name or description.
+
+---
+
+## 📂 Syncing projects
+
+`sync/` is a small shell tool for keeping a local project folder in sync with the cluster.
+
+**One-time setup:**
+```bash
+bash sync/install.sh
+source ~/.zshrc    # or ~/.bashrc
+```
+
+**Register a project (run from your project directory):**
+```bash
+sync-folder . baobab:~/projects/myproject myproject
+```
+
+This creates two shell aliases:
+```bash
+myproject-up    # rsync local → cluster
+myproject-down  # rsync cluster → local
+```
+
+The interactive setup also lets you choose extra rsync flags, generate an `rsync-exclude.txt`, and optionally install a cron job for automatic periodic pushes.
+
+See [sync/README.md](sync/README.md) for full documentation.
 
 ---
 
