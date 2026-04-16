@@ -1,0 +1,344 @@
+#!/usr/bin/env bash
+# sync-folder — register a local project folder for rsync syncing to an HPC cluster
+#
+# Usage: sync-folder <local-path> <host:remote-path> <project-name>
+#   e.g: sync-folder . baobab:~/projects/myproject myproject
+#
+# Creates two shell aliases in ~/.rsync-aliases.sh:
+#   <name>-up   — push local → remote
+#   <name>-down — pull remote → local
+#
+# Run sync/install.sh once first to set up global access.
+
+set -euo pipefail
+
+ALIASES_FILE="$HOME/.rsync-aliases.sh"
+LOGS_DIR="$HOME/.rsync-logs"
+
+# ─── colours ────────────────────────────────────────────────────────────────
+RED='\033[0;31m'; YELLOW='\033[1;33m'; GREEN='\033[0;32m'
+BOLD='\033[1m'; RESET='\033[0m'
+
+err()  { echo -e "${RED}ERROR:${RESET} $*" >&2; }
+warn() { echo -e "${YELLOW}WARN:${RESET}  $*"; }
+ok()   { echo -e "${GREEN}✓${RESET} $*"; }
+h()    { echo -e "\n${BOLD}$*${RESET}"; }
+
+# ─── usage ──────────────────────────────────────────────────────────────────
+usage() {
+  echo "Usage: sync-folder <local-path> <host:remote-path> <project-name>"
+  echo ""
+  echo "  local-path       Path to local project directory (use . for current dir)"
+  echo "  host:remote-path Remote destination in rsync format (e.g. baobab:~/projects/foo)"
+  echo "  project-name     Short name for aliases — letters, numbers, hyphens, underscores only"
+  echo ""
+  echo "Examples:"
+  echo "  sync-folder . baobab:~/projects/myproject myproject"
+  echo "  sync-folder ~/work/thesis baobab:~/thesis thesis"
+  exit 1
+}
+
+# ─── A. Argument validation ──────────────────────────────────────────────────
+if [[ $# -ne 3 ]]; then
+  err "Expected 3 arguments, got $#."
+  echo ""
+  usage
+fi
+
+LOCAL_ARG="$1"
+REMOTE="$2"
+NAME="$3"
+
+# Resolve local path
+if [[ "$LOCAL_ARG" == "." ]]; then
+  LOCAL_PATH="$(pwd)"
+else
+  # Expand ~ manually (eval is safe here — user-supplied path)
+  LOCAL_PATH="${LOCAL_ARG/#\~/$HOME}"
+  # Resolve to absolute without realpath dependency
+  if command -v realpath &>/dev/null; then
+    LOCAL_PATH="$(realpath "$LOCAL_PATH" 2>/dev/null || echo "$LOCAL_PATH")"
+  else
+    LOCAL_PATH="$(cd "$LOCAL_PATH" 2>/dev/null && pwd)" || {
+      err "Cannot resolve path: $LOCAL_ARG"
+      exit 1
+    }
+  fi
+fi
+
+# Strip trailing slash from local path
+LOCAL_PATH="${LOCAL_PATH%/}"
+
+# Validate local path exists
+if [[ ! -d "$LOCAL_PATH" ]]; then
+  err "Local path does not exist or is not a directory: $LOCAL_PATH"
+  exit 1
+fi
+
+# Validate remote format
+if [[ "$REMOTE" != *:* ]]; then
+  err "Remote must be in host:path format (e.g. baobab:~/projects/foo)"
+  exit 1
+fi
+REMOTE_HOST="${REMOTE%%:*}"
+REMOTE_PATH="${REMOTE#*:}"
+
+# Validate project name
+if [[ ! "$NAME" =~ ^[a-zA-Z0-9_-]+$ ]]; then
+  err "Project name '$NAME' is invalid. Use only letters, numbers, hyphens, and underscores."
+  exit 1
+fi
+
+# Reject single quotes in paths (would break alias quoting)
+if [[ "$LOCAL_PATH" == *"'"* || "$REMOTE" == *"'"* ]]; then
+  err "Paths cannot contain single quotes (alias quoting limitation)."
+  exit 1
+fi
+
+echo ""
+echo -e "${BOLD}sync-folder — registering project: ${GREEN}$NAME${RESET}"
+echo "  Local:  $LOCAL_PATH"
+echo "  Remote: $REMOTE"
+
+# ─── B. Duplicate / partial block check ─────────────────────────────────────
+OVERWRITE=false
+
+ensure_aliases_file() {
+  if [[ ! -f "$ALIASES_FILE" ]]; then
+    {
+      echo "# rsync aliases — managed by sync-folder"
+      echo "# Each project block is delimited by BEGIN/END markers."
+      echo "# Do not edit the BEGIN/END lines manually."
+    } > "$ALIASES_FILE"
+    ok "Created $ALIASES_FILE"
+  fi
+}
+
+ensure_aliases_file
+
+if grep -q "^# BEGIN ${NAME}$" "$ALIASES_FILE" 2>/dev/null; then
+  # Check for matching END
+  if ! grep -q "^# END ${NAME}$" "$ALIASES_FILE" 2>/dev/null; then
+    err "Found '# BEGIN $NAME' in $ALIASES_FILE but no matching '# END $NAME'."
+    err "The file may be corrupted. Please manually remove the incomplete block and retry."
+    exit 1
+  fi
+
+  echo ""
+  warn "Project '$NAME' is already registered. Existing aliases:"
+  grep "^alias ${NAME}-" "$ALIASES_FILE" | sed 's/^/  /'
+  echo ""
+  read -rp "Overwrite? [Y/n]: " ow_answer
+  if [[ "${ow_answer,,}" == "n" ]]; then
+    echo "Aborted."
+    exit 0
+  fi
+  OVERWRITE=true
+fi
+
+# ─── C. Interactive flags menu ───────────────────────────────────────────────
+h "Rsync flags"
+echo "Base flags always included: -avzP"
+echo ""
+echo "Select additional flags (enter numbers separated by spaces, or press Enter for none):"
+echo "  1)  --delete        Remove remote files that no longer exist locally (push)"
+echo "  2)  --exclude='.git/'  Exclude .git directory"
+echo "  3)  -u / --update   Skip files that are newer on the destination"
+echo "  4)  --checksum      Compare by checksum instead of timestamp (slower)"
+echo "  5)  --no-perms      Don't sync file permissions (useful cross-platform)"
+echo "  6)  --bwlimit=N     Limit bandwidth (you'll be prompted for KB/s)"
+echo ""
+read -rp "Your choice(s): " flag_input
+
+EXTRA_FLAGS=""
+BWLIMIT=""
+
+for token in $flag_input; do
+  case "$token" in
+    1) EXTRA_FLAGS="$EXTRA_FLAGS --delete" ;;
+    2) EXTRA_FLAGS="$EXTRA_FLAGS --exclude='.git/'" ;;
+    3) EXTRA_FLAGS="$EXTRA_FLAGS -u" ;;
+    4) EXTRA_FLAGS="$EXTRA_FLAGS --checksum" ;;
+    5) EXTRA_FLAGS="$EXTRA_FLAGS --no-perms" ;;
+    6)
+      read -rp "  Bandwidth limit in KB/s (e.g. 5000 for ~5 MB/s): " bwval
+      if [[ "$bwval" =~ ^[0-9]+$ ]]; then
+        EXTRA_FLAGS="$EXTRA_FLAGS --bwlimit=$bwval"
+        BWLIMIT="$bwval"
+      else
+        warn "Invalid bandwidth value '$bwval' — skipping --bwlimit"
+      fi
+      ;;
+    *) warn "Unknown option '$token' — ignored" ;;
+  esac
+done
+
+# Trim leading space
+EXTRA_FLAGS="${EXTRA_FLAGS# }"
+BASE_FLAGS="-avzP"
+if [[ -n "$EXTRA_FLAGS" ]]; then
+  FINAL_FLAGS="$BASE_FLAGS $EXTRA_FLAGS"
+else
+  FINAL_FLAGS="$BASE_FLAGS"
+fi
+
+echo ""
+echo "  Flags: $FINAL_FLAGS"
+
+# ─── D. Exclude file ─────────────────────────────────────────────────────────
+h "Exclude file"
+EXCLUDE_FLAG=""
+
+read -rp "Create rsync-exclude.txt in $LOCAL_PATH? [Y/n]: " excl_answer
+if [[ "${excl_answer,,}" != "n" ]]; then
+  EXCLUDE_FILE="$LOCAL_PATH/rsync-exclude.txt"
+
+  do_write_excl=true
+  if [[ -f "$EXCLUDE_FILE" ]]; then
+    warn "rsync-exclude.txt already exists."
+    read -rp "  Overwrite with defaults? [y/N]: " ow_excl
+    if [[ "${ow_excl,,}" != "y" ]]; then
+      do_write_excl=false
+      ok "Keeping existing rsync-exclude.txt"
+    fi
+  fi
+
+  if [[ "$do_write_excl" == "true" ]]; then
+    cat > "$EXCLUDE_FILE" <<EOF
+# rsync exclude file for project: $NAME
+# One pattern per line. Patterns are relative to the source root.
+# Prefix with / to anchor to root only (e.g. /data/ excludes only top-level data/).
+.git/
+__pycache__/
+*.pyc
+*.pyo
+.DS_Store
+*.swp
+*.swo
+node_modules/
+.env
+.env.*
+EOF
+    ok "Created $EXCLUDE_FILE"
+    echo "  Edit it to customise which files are excluded from syncing."
+  fi
+
+  EXCLUDE_FLAG="--exclude-from=\"${EXCLUDE_FILE}\""
+  FINAL_FLAGS="$FINAL_FLAGS $EXCLUDE_FLAG"
+fi
+
+# ─── E. Cron job ─────────────────────────────────────────────────────────────
+h "Cron job (auto-push)"
+CRON_ENTRY=""
+CRON_SCHEDULE=""
+
+read -rp "Set up an automatic push cron job for '$NAME'? [y/N]: " cron_answer
+if [[ "${cron_answer,,}" == "y" ]]; then
+  if ! command -v crontab &>/dev/null; then
+    warn "crontab not found — skipping cron setup."
+  else
+    echo ""
+    echo "Schedule options:"
+    echo "  1)  Every 15 minutes  (*/15 * * * *)"
+    echo "  2)  Every 30 minutes  (*/30 * * * *)"
+    echo "  3)  Hourly            (0 * * * *)"
+    echo "  4)  Every 6 hours     (0 */6 * * *)"
+    echo "  5)  Daily at midnight (0 0 * * *)"
+    echo "  6)  Custom cron expression"
+    echo ""
+    read -rp "Your choice [1-6]: " sched_choice
+
+    case "$sched_choice" in
+      1) CRON_SCHEDULE="*/15 * * * *" ;;
+      2) CRON_SCHEDULE="*/30 * * * *" ;;
+      3) CRON_SCHEDULE="0 * * * *" ;;
+      4) CRON_SCHEDULE="0 */6 * * *" ;;
+      5) CRON_SCHEDULE="0 0 * * *" ;;
+      6)
+        read -rp "  Enter cron expression (e.g. '0 */4 * * *'): " CRON_SCHEDULE
+        ;;
+      *) warn "Invalid choice — skipping cron setup." ;;
+    esac
+
+    if [[ -n "$CRON_SCHEDULE" ]]; then
+      # Expand ~ to $HOME in paths for cron (cron doesn't expand ~)
+      CRON_LOCAL="${LOCAL_PATH}"
+      CRON_REMOTE="${REMOTE_PATH/#\~/$HOME}"
+      CRON_REMOTE_FULL="${REMOTE_HOST}:${CRON_REMOTE}"
+
+      # Resolve exclude-from path in cron flags (already absolute; replace quoted form)
+      CRON_FLAGS="${FINAL_FLAGS}"
+      if [[ -n "$EXCLUDE_FLAG" ]]; then
+        CRON_FLAGS="${CRON_FLAGS/--exclude-from=\"${EXCLUDE_FILE}\"/--exclude-from=${EXCLUDE_FILE}}"
+      fi
+
+      RSYNC_BIN="$(command -v rsync)"
+      mkdir -p "$LOGS_DIR"
+      LOG_FILE="$LOGS_DIR/${NAME}-push.log"
+
+      CRON_CMD="$CRON_SCHEDULE $RSYNC_BIN $CRON_FLAGS \"${CRON_LOCAL}/\" \"${CRON_REMOTE_FULL}/\" >> \"${LOG_FILE}\" 2>&1 # sync-folder:${NAME}"
+
+      echo ""
+      echo "  Cron entry:"
+      echo "  $CRON_CMD"
+      echo ""
+      read -rp "  Confirm and install? [Y/n]: " cron_confirm
+      if [[ "${cron_confirm,,}" != "n" ]]; then
+        # Remove any existing entry for this project, then add new one
+        (crontab -l 2>/dev/null | grep -v "# sync-folder:${NAME}$") | crontab -
+        (crontab -l 2>/dev/null; echo "$CRON_CMD") | crontab -
+        CRON_ENTRY="$CRON_CMD"
+        ok "Cron job installed. Log: $LOG_FILE"
+      else
+        echo "  Cron setup skipped."
+      fi
+    fi
+  fi
+fi
+
+# ─── F. Write aliases ────────────────────────────────────────────────────────
+UP_CMD="rsync $FINAL_FLAGS \"${LOCAL_PATH}/\" \"${REMOTE}/\""
+DOWN_CMD="rsync $FINAL_FLAGS \"${REMOTE}/\" \"${LOCAL_PATH}/\""
+
+TIMESTAMP="$(date '+%Y-%m-%d %H:%M:%S')"
+
+ALIAS_BLOCK="
+# BEGIN ${NAME}
+# Project: ${NAME}
+# Local:   ${LOCAL_PATH}
+# Remote:  ${REMOTE}
+# Flags:   ${FINAL_FLAGS}
+# Updated: ${TIMESTAMP}
+alias ${NAME}-up='${UP_CMD}'
+alias ${NAME}-down='${DOWN_CMD}'
+# END ${NAME}"
+
+if [[ "$OVERWRITE" == "true" ]]; then
+  # Delete existing block (sed -i behaves differently on macOS vs Linux)
+  sed -i "/^# BEGIN ${NAME}$/,/^# END ${NAME}$/d" "$ALIASES_FILE"
+fi
+
+printf '%s\n' "$ALIAS_BLOCK" >> "$ALIASES_FILE"
+
+# ─── G. Summary ─────────────────────────────────────────────────────────────
+echo ""
+echo -e "${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
+echo -e "${BOLD} sync-folder setup complete: ${GREEN}${NAME}${RESET}"
+echo -e "${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
+echo "  Local:    $LOCAL_PATH"
+echo "  Remote:   $REMOTE"
+echo "  Flags:    $FINAL_FLAGS"
+[[ -n "$EXCLUDE_FLAG" ]] && echo "  Excludes: $LOCAL_PATH/rsync-exclude.txt"
+echo ""
+echo "  Aliases created:"
+echo -e "    ${GREEN}${NAME}-up${RESET}   — push local → remote"
+echo -e "    ${GREEN}${NAME}-down${RESET} — pull remote → local"
+if [[ -n "$CRON_ENTRY" ]]; then
+  echo ""
+  echo "  Auto-push: $CRON_SCHEDULE"
+  echo "  Cron log:  $LOGS_DIR/${NAME}-push.log"
+fi
+echo ""
+echo "  To activate aliases now:"
+echo -e "    ${BOLD}source $ALIASES_FILE${RESET}"
+echo -e "${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
