@@ -1,6 +1,6 @@
 # Baobab HPC — File Transfer
 
-Assumes SSH is already configured with an alias (e.g. `baobab`). See [baobab-ssh.md](baobab-ssh.md) for setup.
+Assumes SSH is already configured with an alias (e.g. `baobab`). See [ssh.md](ssh.md) for setup.
 
 **Run all transfer commands from your local machine**, not from inside the cluster.
 
