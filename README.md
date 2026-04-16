@@ -19,7 +19,7 @@ hpc-unige/
 
 **guides/** contains polished, generic instructions that should work for any UNIGE HPC user. They don't include personal usernames or paths — those belong in your own local notes.
 
-**wiki/** is an LLM-maintained knowledge base synthesized from the official UNIGE HPC documentation. It's meant to be queried and extended incrementally, not read cover to cover.
+**wiki/** is an [LM-maintained knowledge base](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f) (as introduced by Andrej Karpathy) synthesized from the official UNIGE HPC documentation. It's meant to be queried and extended incrementally, not read cover to cover. Having it around will increase the accuracy of responses you get from LLMs, you don't have to read what is in it yourself.
 
 ---
 
