@@ -8,7 +8,7 @@ Personal reference docs for the [UNIGE HPC clusters](https://doc.eresearch.unige
 
 ```
 hpc-unige/
-├── guides/          — Generic how-to docs (SSH, file transfer)
+├── guides/          — Generic how-to docs (SSH, file transfer, Slurm)
 └── wiki/            — LLM-maintained wiki, ingested from official UNIGE docs
     ├── _raw_/       — Source documents (immutable)
     ├── _schema_/    — Wiki operating rules
@@ -29,6 +29,7 @@ If you're new to the clusters, read these in order:
 
 1. [SSH setup](guides/ssh.md) — how to connect, set up SSH keys, configure aliases, and not get locked out by fail2ban
 2. [File transfer](guides/file-transfer.md) — scp, rsync, sftp, and how to move data between clusters without routing everything through your laptop
+3. [Running jobs (Slurm)](guides/slurm-jobs.md) — how to actually run computations: `sbatch`, `srun`, `salloc`, picking a partition, sizing resources, monitoring jobs
 
 Then browse the wiki for deeper dives:
 
