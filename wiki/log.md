@@ -5,6 +5,25 @@ Format: `## [YYYY-MM-DD] <operation> | <description>`
 
 ---
 
+## [2026-04-16] lint | Wiki lint — 4 fixes, 1 flag
+
+Missing cross-links fixed:
+- slurm.md → added Software Modules + Access to related pages
+- overview.md → added rsync + Data Lifecycle to related pages
+- storage.md → added access/rsync links in External storage section
+
+Stale claim fixed:
+- software-modules.md → virtualenv example used GCC/14.3.0 (not in toolchain table);
+  replaced with a version-agnostic example and a note to use `module spider`.
+
+Gap filled:
+- best-practices.md → added `public-longrun-cpu` (14-day, max 2 cores) to partition guidance.
+
+Remaining gap (not fixed — needs new source):
+- entity-bamboo.md mentions EOS filesystem with no explanation or external link.
+
+---
+
 ## [2026-04-16] ingest | Ingest of 4 rsync source files → 1 new page + cross-links in 4 pages
 
 Sources: rsync_manpage.html (rsync(1) v3.4.1), rsync-ssl_manpage.html, rsyncd-conf_manpage.html,

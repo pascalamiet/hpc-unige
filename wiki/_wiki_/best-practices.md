@@ -26,7 +26,8 @@ Rules and tips for being a good citizen on the UNIGE HPC clusters. See [overview
 
 - Short jobs (<12h): `shared-cpu` — has more nodes, shorter wait
 - Long jobs (12h–4 days): `public-cpu`
-- Up to 7 days: need private partition
+- Very long, low-resource jobs (up to 14 days, max 2 cores): `public-longrun-cpu` — underused and often available
+- Up to 7 days with higher priority: need private partition
 - See the full [partition table in Slurm](slurm.md)
 
 ### Estimate resources accurately

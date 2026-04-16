@@ -102,10 +102,11 @@ Prefer:
 
 ## External storage
 
-- **NASAC**: mount via `gio mount smb://server/share` (requires `dbus-launch bash` first)
+- **NASAC**: mount via `gio mount smb://server/share` (requires `dbus-launch bash` first) — see [access](access.md) for full mounting instructions
 - **CVMFS**: available on all compute and login nodes (e.g., `/cvmfs/atlas.cern.ch`)
 - **EOS**: mountable via `eos fuse mount` (do not mount in `$HOME` or scratch)
-- **SWITCHfilesender**: CLI tool for large file transfers via browser
+- **SWITCHfilesender**: CLI tool for large file transfers via browser — see [access](access.md) for setup
+- For routine file sync between local machine and cluster, see [rsync](rsync.md)
 
 ## Archive options
 

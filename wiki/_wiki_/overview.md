@@ -61,3 +61,4 @@ You never run programs directly on the login node. Everything goes through [Slur
 - [Baobab](entity-baobab.md) · [Yggdrasil](entity-yggdrasil.md) · [Bamboo](entity-bamboo.md)
 - [Slurm](slurm.md) · [Storage](storage.md) · [Software Modules](software-modules.md)
 - [Cost and Accounting](cost-and-accounting.md) · [Best Practices](best-practices.md) · [Access](access.md)
+- [rsync](rsync.md) · [Data Lifecycle](data-lifecycle.md)

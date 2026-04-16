@@ -161,4 +161,5 @@ Priority formula: `partition (up to 15000) + fairshare (up to 30000) + age (up t
 ## Related pages
 
 - [Overview](overview.md) · [Best Practices](best-practices.md) · [Cost and Accounting](cost-and-accounting.md)
+- [Software Modules](software-modules.md) · [Access](access.md)
 - [Baobab](entity-baobab.md) · [Yggdrasil](entity-yggdrasil.md) · [Bamboo](entity-bamboo.md)
