@@ -1,0 +1,44 @@
+
+====== central HPC team ====== 
+
+contact: hpc@unige.ch
+
+===== Yann Sagon =====
+
+HPC referent at the DiSTIC
+
+===== Adrien Albert =====
+
+HPC engineer at DiSTIC
+
+===== Gaël Rossignol =====
+
+HPC engineer at DiSTIC
+
+===== Remy Ressegaire =====
+
+Sys admin at Astro
+
+
+
+
+====== Local HPC team ======
+
+===== DPNC =====
+  * [[John.Raine@unige.ch|Johnny Raine]]: dpnc compute nodes, dpnc storage
+  * [[Yann.Meunier@unige.ch|Yann Meunier]]: dpnc BeeGFS
+
+===== DPT =====
+  * [[Jacques.Rougemont@unige.ch|Jacques Rougemont]] 
+
+===== hepia =====
+  * [[paul.albuquerque@hesge.ch|Albuquerque Paul]]
+  * [[pierre.kunzli@hesge.ch|Kunzli Pierre]]
+
+===== Astro =====
+  * [[volodymyr.savchenko@unige.ch|Volodymyr Savchenko]]: Astro specific softwares
+  * [[Hubert.Degaudenzi@unige.ch|Hubert Degaudenzi]]: Astro specific softwares
+
+
+
+

@@ -1,0 +1,14 @@
+
+====== Linux on HPC clusters ======
+
+All the servers used in the cluster are using GNU/Linux, and more specifically Rocky 9.
+
+Having at least basic knowledge of Linux, and ideally with the command line (terminal), is a pre-requisite for using our clusters. You are also expected to be able to write a simple Bash/Shell script, as this is needed to create //sbatch// scripts.
+
+Explaining how to use Linux is out of the scope of this documentation, but you can find plenty of tutorials and explanation on the internet.
+
+====== External resources ======
+
+If you never used Linux, you can start with those links to get some Linux and Bash tutorials :
+  * https://www.webterm.app/en (online, tutorial)
+  * http://linuxcommand.org (highly recommended)
