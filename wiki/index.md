@@ -24,3 +24,4 @@ Read this first when answering a query to find relevant pages.
 - [Best Practices](_wiki_/best-practices.md) — Rules, resource efficiency, etiquette, job checklist, departure procedure
 - [Access](_wiki_/access.md) — SSH login, file transfer (scp/rsync), OpenOnDemand, X2Go, account types
 - [Data Lifecycle](_wiki_/data-lifecycle.md) — Data management: where to store, auto-deletion, archiving, DMP
+- [rsync](_wiki_/rsync.md) — Full rsync reference: flags, trailing-slash rule, exclude patterns, delta-transfer, cluster-to-cluster, rsync daemon

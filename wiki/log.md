@@ -5,6 +5,17 @@ Format: `## [YYYY-MM-DD] <operation> | <description>`
 
 ---
 
+## [2026-04-16] ingest | Ingest of 4 rsync source files → 1 new page + cross-links in 4 pages
+
+Sources: rsync_manpage.html (rsync(1) v3.4.1), rsync-ssl_manpage.html, rsyncd-conf_manpage.html,
+rsync-tutorial.html (frameset only — no ingestible content).
+
+Pages created: rsync (1 page).
+Pages updated: access (rsync link + related pages), data-lifecycle (rsync migration link),
+best-practices (rsync link in storage discipline + related pages).
+
+---
+
 ## [2026-04-16] ingest | Batch ingest of 12 official UNIGE HPC documentation files
 
 Ingested: 00_getting_started.txt, 01_linux.txt, 02_how_cluster_works.txt, 03_access_cluster.txt,

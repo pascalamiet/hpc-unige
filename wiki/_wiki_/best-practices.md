@@ -55,7 +55,7 @@ If your software supports checkpointing:
 
 - Store **only research data** on the clusters — no personal files, emails, etc.
 - Clean up regularly — `$HOME/scratch` files older than 3 months are auto-deleted on Baobab
-- Move outputs to permanent storage ([NASAC](storage.md), [Yareta](storage.md)) when done
+- Move outputs to permanent storage ([NASAC](storage.md), [Yareta](storage.md)) when done — use [rsync](rsync.md) for efficient incremental downloads to your local machine
 - Avoid directories with >1,000 files — hurts BeeGFS metadata performance
 - Do NOT run `find`, `ncdu`, `du` on the shared filesystem — it can slow down the entire cluster for everyone
 - See [storage](storage.md) and [data-lifecycle](data-lifecycle.md) for full guidance
@@ -104,3 +104,4 @@ The clusters consume ~80 kW each (not counting AC). Wasting resources = wasting 
 
 - [Slurm](slurm.md) · [Storage](storage.md) · [Data Lifecycle](data-lifecycle.md)
 - [Software Modules](software-modules.md) · [Cost and Accounting](cost-and-accounting.md) · [Overview](overview.md)
+- [rsync](rsync.md) · [Access](access.md)

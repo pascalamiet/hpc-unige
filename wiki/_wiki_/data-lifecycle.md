@@ -38,7 +38,7 @@ The HPC clusters are **not long-term storage providers**. Each user is responsib
 ## After your jobs: clean up
 
 1. Copy important outputs from local `/scratch` (per-node) to `$HOME` or `$HOME/scratch` before the job ends
-2. Migrate final results to permanent off-cluster storage
+2. Migrate final results to permanent off-cluster storage — use [rsync](rsync.md) for efficient incremental transfers
 3. Delete intermediate files no longer needed from `$HOME/scratch`
 
 ## Permanent storage options
@@ -70,4 +70,4 @@ Expired accounts are eligible for deletion at any time. Prepare well in advance.
 ## Related pages
 
 - [Storage](storage.md) · [Best Practices](best-practices.md) · [Access](access.md)
-- [Overview](overview.md) · [Slurm](slurm.md)
+- [Overview](overview.md) · [Slurm](slurm.md) · [rsync](rsync.md)

@@ -82,6 +82,8 @@ rsync -aviuzP my_project/ login1.yggdrasil.hpc.unige.ch:~/my_project/
 
 Common rsync flags: `-a` (archive), `-v` (verbose), `-i` (itemized), `-u` (skip newer dest files), `-z` (compress), `-P` (partial + progress), `-n` (dry run).
 
+See [rsync](rsync.md) for a full reference: flag descriptions, exclude patterns, delta-transfer algorithm, cluster-to-cluster transfers, and troubleshooting.
+
 ### SWITCHfilesender
 
 For large files via browser download:
@@ -152,4 +154,4 @@ For scripted access: store credentials in a file and pipe to `gio mount`.
 ## Related pages
 
 - [Overview](overview.md) · [Best Practices](best-practices.md) · [Storage](storage.md)
-- [Software Modules](software-modules.md) · [Slurm](slurm.md)
+- [Software Modules](software-modules.md) · [Slurm](slurm.md) · [rsync](rsync.md)
