@@ -87,3 +87,9 @@ The wiki is designed to grow incrementally. To add new sources:
 3. The LLM reads `wiki/_schema_/SCHEMA.md`, creates or updates pages in `wiki/_wiki_/`, updates `wiki/index.md`, and appends to `wiki/log.md`
 
 See [wiki/README.md](wiki/README.md) for the full wiki workflow.
+
+---
+
+## 🤝 Collaboration
+
+Feel free to contact us or create a pull request if you want to contribute to this project and provide a service to your fellow researchers in this university. Even if you just have an abstract idea of what you would like to see implemented just reach out.
