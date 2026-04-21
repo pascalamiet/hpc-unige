@@ -21,7 +21,7 @@ hpc-unige/
 
 **guides/** contains polished, generic instructions that should work for any UNIGE HPC user. They don't include personal usernames or paths — those belong in your own local notes.
 
-**skills/** holds LLM skill scripts that make common HPC tasks interactive — generating job scripts, finding modules, tuning resources. See [🤖 LLM skills](#-llm-skills) below.
+**skills/** holds LLM skill scripts that make common HPC tasks interactive — setting up SSH, generating job scripts, finding modules, tuning resources. See [🤖 LLM skills](#-llm-skills) below.
 
 **sync/** is a small shell tool that registers a local project folder for one-command rsync syncing to the cluster. See [📂 Syncing projects](#-syncing-projects) below.
 
@@ -102,6 +102,7 @@ See [wiki/README.md](wiki/README.md) for the full wiki workflow.
 
 | Skill | Invoke with | What it does |
 |-------|-------------|--------------|
+| [hpc-setup](skills/hpc-setup/) | *"set up SSH for baobab"* | Guides the full first-time SSH setup flow: account check, key creation, key registration, `~/.ssh/config`, and first login troubleshooting |
 | [hpc-job](skills/hpc-job/) | *"create a slurm job script"* | Asks 10 questions (partition, time, CPUs, memory, GPU, email…) and writes a ready-to-submit `job.sh` |
 | [hpc-module](skills/hpc-module/) | *"find the module for Python"* | Runs `module spider` over SSH and returns the exact `module load` line to paste into your script |
 | [hpc-resources](skills/hpc-resources/) | *"tune my job resources"* | Reads `seff` output for a completed job and gives paste-ready `#SBATCH` recommendations for time, CPUs, and memory |
