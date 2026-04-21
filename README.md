@@ -34,8 +34,11 @@ hpc-unige/
 If you're new to the clusters, read these in order:
 
 1. [SSH setup](guides/ssh.md) — how to connect, set up SSH keys, configure aliases, and not get locked out by fail2ban
+   If you want guided help, use the [`hpc-setup`](skills/hpc-setup/) skill to walk through account checks, SSH key creation, `~/.ssh/config`, and first login troubleshooting.
 2. [File transfer](guides/file-transfer.md) — scp, rsync, sftp, and how to move data between clusters without routing everything through your laptop
+   If you expect to sync the same project repeatedly, install the [`sync/`](sync/) bash tool for one-command push/pull workflows built on `rsync`.
 3. [Running jobs (Slurm)](guides/slurm-jobs.md) — how to actually run computations: `sbatch`, `srun`, `salloc`, picking a partition, sizing resources, monitoring jobs
+   You can also use the [`hpc-job`](skills/hpc-job/), [`hpc-module`](skills/hpc-module/), and [`hpc-resources`](skills/hpc-resources/) skills to generate job scripts, find the right software module, and tune resource requests after a run.
 
 Then browse the wiki for deeper dives:
 
