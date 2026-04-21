@@ -53,6 +53,51 @@ Then browse the wiki for deeper dives:
 
 ---
 
+## 🔄 Workflow map
+
+This repo is organized around a fairly simple HPC workflow: get access working, move code and data, run jobs, then tighten the setup based on what happened.
+
+```mermaid
+flowchart TD
+    A[Start: new or returning UNIGE HPC user] --> B[Read SSH guide]
+    A --> C[Read file transfer guide]
+    A --> D[Read Slurm jobs guide]
+
+    B --> E[hpc-setup skill]
+    E --> F[Working ssh baobab / yggdrasil / bamboo]
+
+    F --> G[sync/install.sh]
+    G --> H[sync-folder tool]
+    C --> H
+    H --> I[Push or pull project files with rsync aliases]
+
+    F --> J[hpc-module skill]
+    D --> K[hpc-job skill]
+    J --> K
+    I --> K
+    K --> L[Submit job with sbatch or test with srun]
+
+    L --> M[hpc-resources skill]
+    M --> N[Adjust time, CPUs, memory]
+    N --> K
+
+    B --> O[wiki pages]
+    C --> O
+    D --> O
+    J --> O
+    M --> O
+    O --> P[Deeper reference on storage, Slurm, rsync, best practices]
+```
+
+**How to read it:**
+- [`guides/ssh.md`](guides/ssh.md), [`guides/file-transfer.md`](guides/file-transfer.md), and [`guides/slurm-jobs.md`](guides/slurm-jobs.md) are the baseline manuals.
+- [`skills/hpc-setup/`](skills/hpc-setup/) gets SSH access working end to end.
+- [`sync/`](sync/) installs `sync-folder`, which gives you reusable `rsync` push/pull aliases for recurring project sync.
+- [`skills/hpc-module/`](skills/hpc-module/), [`skills/hpc-job/`](skills/hpc-job/), and [`skills/hpc-resources/`](skills/hpc-resources/) cover the run cycle: find software, create a job script, inspect efficiency, then refine the next run.
+- [`wiki/_wiki_/`](wiki/_wiki_/) is the deeper reference layer you dip into when the short guides are not enough.
+
+---
+
 ## 🖥️ The three clusters
 
 UNIGE runs three separate HPC clusters. They do **not** share storage — pick one and stay there.
