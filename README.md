@@ -106,7 +106,7 @@ See [wiki/README.md](wiki/README.md) for the full wiki workflow.
 | [hpc-module](skills/hpc-module/) | *"find the module for Python"* | Runs `module spider` over SSH and returns the exact `module load` line to paste into your script |
 | [hpc-resources](skills/hpc-resources/) | *"tune my job resources"* | Reads `seff` output for a completed job and gives paste-ready `#SBATCH` recommendations for time, CPUs, and memory |
 
-Each skill lives in its own folder with a `SKILL.md` that drives the LLM interaction. To use them, point your LLM at this repo and invoke the skill by name or description. Ideally you save them in your LLM's dotfile. If you use the `local-sync` shell tool from the [ai-setup](https://github.com/pascalamiet/ai-setup) project then you get the skills automatically. 
+Each skill lives in its own folder with a `SKILL.md` that drives the LLM interaction. To use them, point your LLM at this repo and invoke the skill by name or description. Ideally you save them in your LLM's dotfile.
 
 ---
 
