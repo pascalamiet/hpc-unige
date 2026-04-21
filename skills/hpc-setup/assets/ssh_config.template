@@ -1,0 +1,4 @@
+Host __ALIAS__
+  HostName __HOSTNAME__
+  User __USERNAME__
+  IdentityFile __IDENTITY_FILE__
