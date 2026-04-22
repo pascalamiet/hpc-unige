@@ -122,6 +122,13 @@ encoded_name() {
   printf '%s' "$1" | sed -e 's/_/__us__/g' -e 's/-/__dash__/g'
 }
 
+normalize_subpath() {
+  local subpath="$1"
+  subpath="${subpath#/}"
+  subpath="${subpath%/}"
+  printf '%s' "$subpath"
+}
+
 ensure_dispatchers() {
   local dispatcher_block
   dispatcher_block="$(cat <<'EOF'
@@ -341,7 +348,44 @@ else
   [[ $inline_count -gt 0 ]] && echo "  $inline_count inline exclude pattern(s) added."
 fi
 
-# ─── E. Cron job ─────────────────────────────────────────────────────────────
+# ─── E. Download scope ───────────────────────────────────────────────────────
+h "Download scope"
+echo "Choose what hpc-down should pull:"
+echo "  1)  Whole remote project folder"
+echo "  2)  Specific remote subfolder only"
+echo ""
+
+DOWN_REMOTE="$REMOTE"
+DOWN_LOCAL="$LOCAL_PATH"
+DOWN_SCOPE_DESC="whole project folder"
+DOWN_SUBPATH=""
+
+read -rp "Your choice [1-2, default 1]: " down_scope_choice
+if [[ "$down_scope_choice" == "2" ]]; then
+  while true; do
+    read -rp "  Remote subfolder relative to project root (e.g. outputs or results/final): " down_subpath_input
+    DOWN_SUBPATH="$(normalize_subpath "$down_subpath_input")"
+
+    if [[ -z "$DOWN_SUBPATH" ]]; then
+      warn "Subfolder cannot be empty."
+      continue
+    fi
+    if [[ "$DOWN_SUBPATH" == *"'"* ]]; then
+      warn "Subfolder cannot contain single quotes."
+      continue
+    fi
+    break
+  done
+
+  DOWN_REMOTE="${REMOTE%/}/$DOWN_SUBPATH"
+  DOWN_LOCAL="${LOCAL_PATH%/}/$DOWN_SUBPATH"
+  DOWN_SCOPE_DESC="remote subfolder '$DOWN_SUBPATH' -> local '$DOWN_SUBPATH'"
+fi
+
+echo ""
+echo "  hpc-down target: $DOWN_SCOPE_DESC"
+
+# ─── F. Cron job ─────────────────────────────────────────────────────────────
 h "Cron job (auto-push)"
 CRON_ENTRY=""
 CRON_SCHEDULE=""
@@ -410,9 +454,9 @@ if [[ "${cron_answer,,}" == "y" ]]; then
   fi
 fi
 
-# ─── F. Write sync commands ──────────────────────────────────────────────────
+# ─── G. Write sync commands ──────────────────────────────────────────────────
 UP_CMD="rsync $FINAL_FLAGS \"${LOCAL_PATH}/\" \"${REMOTE}/\""
-DOWN_CMD="rsync $FINAL_FLAGS \"${REMOTE}/\" \"${LOCAL_PATH}/\""
+DOWN_CMD="mkdir -p \"${DOWN_LOCAL}\" && rsync $FINAL_FLAGS \"${DOWN_REMOTE}/\" \"${DOWN_LOCAL}/\""
 FN_SUFFIX="$(encoded_name "$NAME")"
 
 TIMESTAMP="$(date '+%Y-%m-%d %H:%M:%S')"
@@ -422,6 +466,7 @@ ALIAS_BLOCK="
 # Project: ${NAME}
 # Local:   ${LOCAL_PATH}
 # Remote:  ${REMOTE}
+# Down:    ${DOWN_REMOTE} -> ${DOWN_LOCAL}
 # Flags:   ${FINAL_FLAGS}
 # Updated: ${TIMESTAMP}
 __hpc_up_${FN_SUFFIX}() {
@@ -439,13 +484,14 @@ fi
 
 printf '%s\n' "$ALIAS_BLOCK" >> "$ALIASES_FILE"
 
-# ─── G. Summary ─────────────────────────────────────────────────────────────
+# ─── H. Summary ─────────────────────────────────────────────────────────────
 echo ""
 echo -e "${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
 echo -e "${BOLD} hpc-sync setup complete: ${GREEN}${NAME}${RESET}"
 echo -e "${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
 echo "  Local:    $LOCAL_PATH"
 echo "  Remote:   $REMOTE"
+echo "  Down:     $DOWN_REMOTE -> $DOWN_LOCAL"
 echo "  Flags:    $FINAL_FLAGS"
 [[ -n "$EXCLUDE_FLAG" ]] && echo "  Excludes: $LOCAL_PATH/rsync-exclude.txt"
 echo ""

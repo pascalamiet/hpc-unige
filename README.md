@@ -182,6 +182,8 @@ hpc-down myproject  # rsync cluster → local
 
 The interactive setup also lets you choose extra rsync flags, generate an `rsync-exclude.txt`, and optionally install a cron job for automatic periodic pushes.
 
+When registering a project, `hpc-sync` also asks whether `hpc-down` should pull the whole project or only a specific remote subfolder such as `outputs/`.
+
 See [sync/README.md](sync/README.md) for full documentation.
 
 ---

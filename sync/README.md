@@ -52,12 +52,19 @@ Interactive prompts let you:
 
 - **Choose extra rsync flags** (--delete, --update, --checksum, --bwlimit, etc.) — base `-avzP` always included
 - **Generate a `rsync-exclude.txt`** in the project directory with sensible defaults
+- **Choose the `hpc-down` download scope** — either the whole remote project or a specific remote subfolder such as `outputs`
 - **Set up a cron job** to auto-push on a schedule (every 15/30 min, hourly, daily, or custom)
 
 The command registers the project in `~/.rsync-aliases.sh`, which exposes two global commands:
 ```bash
 hpc-up thesis
 hpc-down thesis
+```
+
+If you choose a specific download subfolder during registration, `hpc-down thesis` syncs only that remote subfolder into the matching local subfolder. For example, choosing `outputs` makes it pull:
+
+```text
+baobab:~/projects/thesis/outputs/  ->  ~/work/thesis/outputs/
 ```
 
 ---
@@ -116,13 +123,14 @@ hpc-down() { ... }
 # Project: thesis
 # Local:   /home/user/work/thesis
 # Remote:  baobab:~/projects/thesis
+# Down:    baobab:~/projects/thesis/outputs -> /home/user/work/thesis/outputs
 # Flags:   -avzP --delete --exclude-from="/home/user/work/thesis/rsync-exclude.txt"
 # Updated: 2026-04-16 14:32:00
 __hpc_up_thesis() {
   rsync -avzP --delete --exclude-from="/home/user/work/thesis/rsync-exclude.txt" "/home/user/work/thesis/" "baobab:~/projects/thesis/"
 }
 __hpc_down_thesis() {
-  rsync -avzP --delete --exclude-from="/home/user/work/thesis/rsync-exclude.txt" "baobab:~/projects/thesis/" "/home/user/work/thesis/"
+  mkdir -p "/home/user/work/thesis/outputs" && rsync -avzP --delete --exclude-from="/home/user/work/thesis/rsync-exclude.txt" "baobab:~/projects/thesis/outputs/" "/home/user/work/thesis/outputs/"
 }
 # END thesis
 ```
