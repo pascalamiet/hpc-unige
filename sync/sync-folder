@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
-# sync-folder — register a local project folder for rsync syncing to an HPC cluster
+# hpc-sync — register a local project folder for rsync syncing to an HPC cluster
 #
-# Usage: sync-folder <local-path> <host:remote-path> <project-name>
-#   e.g: sync-folder . baobab:~/projects/myproject myproject
+# Usage: hpc-sync <local-path> <host:remote-path> <project-name>
+#   e.g: hpc-sync . baobab:~/projects/myproject myproject
 #
-# Creates two shell aliases in ~/.rsync-aliases.sh:
-#   <name>-up   — push local → remote
-#   <name>-down — pull remote → local
+# Creates project-specific helper functions plus two global commands in
+# ~/.rsync-aliases.sh:
+#   hpc-up <name>   — push local → remote
+#   hpc-down <name> — pull remote → local
 #
 # Run sync/install.sh once first to set up global access.
 
@@ -14,6 +15,8 @@ set -euo pipefail
 
 ALIASES_FILE="$HOME/.rsync-aliases.sh"
 LOGS_DIR="$HOME/.rsync-logs"
+DISPATCHER_START="# BEGIN HPC DISPATCHERS"
+DISPATCHER_END="# END HPC DISPATCHERS"
 
 # ─── colours ────────────────────────────────────────────────────────────────
 RED='\033[0;31m'; YELLOW='\033[1;33m'; GREEN='\033[0;32m'
@@ -26,15 +29,15 @@ h()    { echo -e "\n${BOLD}$*${RESET}"; }
 
 # ─── usage ──────────────────────────────────────────────────────────────────
 usage() {
-  echo "Usage: sync-folder <local-path> <host:remote-path> <project-name>"
+  echo "Usage: hpc-sync <local-path> <host:remote-path> <project-name>"
   echo ""
   echo "  local-path       Path to local project directory (use . for current dir)"
   echo "  host:remote-path Remote destination in rsync format (e.g. baobab:~/projects/foo)"
-  echo "  project-name     Short name for aliases — letters, numbers, hyphens, underscores only"
+  echo "  project-name     Short name for sync commands — letters, numbers, hyphens, underscores only"
   echo ""
   echo "Examples:"
-  echo "  sync-folder . baobab:~/projects/myproject myproject"
-  echo "  sync-folder ~/work/thesis baobab:~/thesis thesis"
+  echo "  hpc-sync . baobab:~/projects/myproject myproject"
+  echo "  hpc-sync ~/work/thesis baobab:~/thesis thesis"
   exit 1
 }
 
@@ -89,14 +92,14 @@ if [[ ! "$NAME" =~ ^[a-zA-Z0-9_-]+$ ]]; then
   exit 1
 fi
 
-# Reject single quotes in paths (would break alias quoting)
+# Reject single quotes in paths (would break generated shell quoting)
 if [[ "$LOCAL_PATH" == *"'"* || "$REMOTE" == *"'"* ]]; then
-  err "Paths cannot contain single quotes (alias quoting limitation)."
+  err "Paths cannot contain single quotes (generated shell quoting limitation)."
   exit 1
 fi
 
 echo ""
-echo -e "${BOLD}sync-folder — registering project: ${GREEN}$NAME${RESET}"
+echo -e "${BOLD}hpc-sync — registering project: ${GREEN}$NAME${RESET}"
 echo "  Local:  $LOCAL_PATH"
 echo "  Remote: $REMOTE"
 
@@ -106,7 +109,8 @@ OVERWRITE=false
 ensure_aliases_file() {
   if [[ ! -f "$ALIASES_FILE" ]]; then
     {
-      echo "# rsync aliases — managed by sync-folder"
+      echo "# rsync project commands — managed by hpc-sync"
+      echo "# Use hpc-up <name> and hpc-down <name> after registering a project."
       echo "# Each project block is delimited by BEGIN/END markers."
       echo "# Do not edit the BEGIN/END lines manually."
     } > "$ALIASES_FILE"
@@ -114,7 +118,77 @@ ensure_aliases_file() {
   fi
 }
 
+encoded_name() {
+  printf '%s' "$1" | sed -e 's/_/__us__/g' -e 's/-/__dash__/g'
+}
+
+ensure_dispatchers() {
+  local dispatcher_block
+  dispatcher_block="$(cat <<'EOF'
+# BEGIN HPC DISPATCHERS
+hpc-up() {
+  local name="${1:-}"
+  if [[ -z "$name" ]]; then
+    echo "Usage: hpc-up <project-name>" >&2
+    return 1
+  fi
+  local fn="__hpc_up_$(printf '%s' "$name" | sed -e 's/_/__us__/g' -e 's/-/__dash__/g')"
+  if typeset -f "$fn" >/dev/null 2>&1; then
+    "$fn" "$@"
+    return $?
+  fi
+  local legacy_alias="${name}-up"
+  if alias "$legacy_alias" >/dev/null 2>&1; then
+    local legacy_cmd
+    legacy_cmd="$(alias "$legacy_alias" 2>/dev/null)"
+    legacy_cmd="${legacy_cmd#*=}"
+    eval "$legacy_cmd"
+    return $?
+  fi
+  echo "Unknown project: $name" >&2
+  return 1
+}
+
+hpc-down() {
+  local name="${1:-}"
+  if [[ -z "$name" ]]; then
+    echo "Usage: hpc-down <project-name>" >&2
+    return 1
+  fi
+  local fn="__hpc_down_$(printf '%s' "$name" | sed -e 's/_/__us__/g' -e 's/-/__dash__/g')"
+  if typeset -f "$fn" >/dev/null 2>&1; then
+    "$fn" "$@"
+    return $?
+  fi
+  local legacy_alias="${name}-down"
+  if alias "$legacy_alias" >/dev/null 2>&1; then
+    local legacy_cmd
+    legacy_cmd="$(alias "$legacy_alias" 2>/dev/null)"
+    legacy_cmd="${legacy_cmd#*=}"
+    eval "$legacy_cmd"
+    return $?
+  fi
+  echo "Unknown project: $name" >&2
+  return 1
+}
+# END HPC DISPATCHERS
+EOF
+)"
+
+  if grep -q "^${DISPATCHER_START}$" "$ALIASES_FILE" 2>/dev/null; then
+    sed -i "/^${DISPATCHER_START}$/,/^${DISPATCHER_END}$/d" "$ALIASES_FILE"
+  fi
+
+  {
+    printf '%s\n' "$dispatcher_block"
+    echo ""
+    cat "$ALIASES_FILE"
+  } > "${ALIASES_FILE}.tmp"
+  mv "${ALIASES_FILE}.tmp" "$ALIASES_FILE"
+}
+
 ensure_aliases_file
+ensure_dispatchers
 
 if grep -q "^# BEGIN ${NAME}$" "$ALIASES_FILE" 2>/dev/null; then
   # Check for matching END
@@ -125,8 +199,9 @@ if grep -q "^# BEGIN ${NAME}$" "$ALIASES_FILE" 2>/dev/null; then
   fi
 
   echo ""
-  warn "Project '$NAME' is already registered. Existing aliases:"
-  grep "^alias ${NAME}-" "$ALIASES_FILE" | sed 's/^/  /'
+  warn "Project '$NAME' is already registered. Existing commands:"
+  echo "  hpc-up $NAME"
+  echo "  hpc-down $NAME"
   echo ""
   read -rp "Overwrite? [Y/n]: " ow_answer
   if [[ "${ow_answer,,}" == "n" ]]; then
@@ -315,7 +390,7 @@ if [[ "${cron_answer,,}" == "y" ]]; then
       mkdir -p "$LOGS_DIR"
       LOG_FILE="$LOGS_DIR/${NAME}-push.log"
 
-      CRON_CMD="$CRON_SCHEDULE $RSYNC_BIN $CRON_FLAGS \"${CRON_LOCAL}/\" \"${CRON_REMOTE_FULL}/\" >> \"${LOG_FILE}\" 2>&1 # sync-folder:${NAME}"
+      CRON_CMD="$CRON_SCHEDULE $RSYNC_BIN $CRON_FLAGS \"${CRON_LOCAL}/\" \"${CRON_REMOTE_FULL}/\" >> \"${LOG_FILE}\" 2>&1 # hpc-sync:${NAME}"
 
       echo ""
       echo "  Cron entry:"
@@ -324,7 +399,7 @@ if [[ "${cron_answer,,}" == "y" ]]; then
       read -rp "  Confirm and install? [Y/n]: " cron_confirm
       if [[ "${cron_confirm,,}" != "n" ]]; then
         # Remove any existing entry for this project, then add new one
-        (crontab -l 2>/dev/null | grep -v "# sync-folder:${NAME}$") | crontab -
+        (crontab -l 2>/dev/null | grep -v "# sync-folder:${NAME}$" | grep -v "# hpc-sync:${NAME}$") | crontab -
         (crontab -l 2>/dev/null; echo "$CRON_CMD") | crontab -
         CRON_ENTRY="$CRON_CMD"
         ok "Cron job installed. Log: $LOG_FILE"
@@ -335,9 +410,10 @@ if [[ "${cron_answer,,}" == "y" ]]; then
   fi
 fi
 
-# ─── F. Write aliases ────────────────────────────────────────────────────────
+# ─── F. Write sync commands ──────────────────────────────────────────────────
 UP_CMD="rsync $FINAL_FLAGS \"${LOCAL_PATH}/\" \"${REMOTE}/\""
 DOWN_CMD="rsync $FINAL_FLAGS \"${REMOTE}/\" \"${LOCAL_PATH}/\""
+FN_SUFFIX="$(encoded_name "$NAME")"
 
 TIMESTAMP="$(date '+%Y-%m-%d %H:%M:%S')"
 
@@ -348,8 +424,12 @@ ALIAS_BLOCK="
 # Remote:  ${REMOTE}
 # Flags:   ${FINAL_FLAGS}
 # Updated: ${TIMESTAMP}
-alias ${NAME}-up='${UP_CMD}'
-alias ${NAME}-down='${DOWN_CMD}'
+__hpc_up_${FN_SUFFIX}() {
+  ${UP_CMD}
+}
+__hpc_down_${FN_SUFFIX}() {
+  ${DOWN_CMD}
+}
 # END ${NAME}"
 
 if [[ "$OVERWRITE" == "true" ]]; then
@@ -362,22 +442,22 @@ printf '%s\n' "$ALIAS_BLOCK" >> "$ALIASES_FILE"
 # ─── G. Summary ─────────────────────────────────────────────────────────────
 echo ""
 echo -e "${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
-echo -e "${BOLD} sync-folder setup complete: ${GREEN}${NAME}${RESET}"
+echo -e "${BOLD} hpc-sync setup complete: ${GREEN}${NAME}${RESET}"
 echo -e "${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
 echo "  Local:    $LOCAL_PATH"
 echo "  Remote:   $REMOTE"
 echo "  Flags:    $FINAL_FLAGS"
 [[ -n "$EXCLUDE_FLAG" ]] && echo "  Excludes: $LOCAL_PATH/rsync-exclude.txt"
 echo ""
-echo "  Aliases created:"
-echo -e "    ${GREEN}${NAME}-up${RESET}   — push local → remote"
-echo -e "    ${GREEN}${NAME}-down${RESET} — pull remote → local"
+echo "  Commands available:"
+echo -e "    ${GREEN}hpc-up ${NAME}${RESET}   — push local → remote"
+echo -e "    ${GREEN}hpc-down ${NAME}${RESET} — pull remote → local"
 if [[ -n "$CRON_ENTRY" ]]; then
   echo ""
   echo "  Auto-push: $CRON_SCHEDULE"
   echo "  Cron log:  $LOGS_DIR/${NAME}-push.log"
 fi
 echo ""
-echo "  To activate aliases now:"
+echo "  To activate the commands now:"
 echo -e "    ${BOLD}source $ALIASES_FILE${RESET}"
 echo -e "${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"

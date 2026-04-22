@@ -10,7 +10,7 @@ Personal reference docs for the [UNIGE HPC clusters](https://doc.eresearch.unige
 hpc-unige/
 ├── guides/          — Generic how-to docs (SSH, file transfer, Slurm)
 ├── skills/          — LLM skill scripts for common HPC workflows
-├── sync/            — sync-folder tool: register projects for rsync push/pull
+├── sync/            — hpc-sync tool: register projects for rsync push/pull
 └── wiki/            — LLM-maintained wiki, ingested from official UNIGE docs
     ├── _raw_/       — Source documents (immutable)
     ├── _schema_/    — Wiki operating rules
@@ -67,9 +67,9 @@ flowchart TD
     E --> F[Working ssh baobab / yggdrasil / bamboo]
 
     F --> G[sync/install.sh]
-    G --> H[sync-folder tool]
+    G --> H[hpc-sync tool]
     C --> H
-    H --> I[Push or pull project files with rsync aliases]
+    H --> I[Push or pull project files with hpc-up and hpc-down]
 
     F --> J[hpc-module skill]
     D --> K[hpc-job skill]
@@ -92,7 +92,7 @@ flowchart TD
 **How to read it:**
 - [`guides/ssh.md`](guides/ssh.md), [`guides/file-transfer.md`](guides/file-transfer.md), and [`guides/slurm-jobs.md`](guides/slurm-jobs.md) are the baseline manuals.
 - [`skills/hpc-setup/`](skills/hpc-setup/) gets SSH access working end to end.
-- [`sync/`](sync/) installs `sync-folder`, which gives you reusable `rsync` push/pull aliases for recurring project sync.
+- [`sync/`](sync/) installs `hpc-sync`, which gives you reusable `hpc-up` / `hpc-down` commands for recurring project sync.
 - [`skills/hpc-module/`](skills/hpc-module/), [`skills/hpc-job/`](skills/hpc-job/), and [`skills/hpc-resources/`](skills/hpc-resources/) cover the run cycle: find software, create a job script, inspect efficiency, then refine the next run.
 - [`wiki/_wiki_/`](wiki/_wiki_/) is the deeper reference layer you dip into when the short guides are not enough.
 
@@ -171,13 +171,13 @@ source ~/.zshrc    # or ~/.bashrc
 
 **Register a project (run from your project directory):**
 ```bash
-sync-folder . baobab:~/projects/myproject myproject
+hpc-sync . baobab:~/projects/myproject myproject
 ```
 
-This creates two shell aliases:
+This enables two shell commands:
 ```bash
-myproject-up    # rsync local → cluster
-myproject-down  # rsync cluster → local
+hpc-up myproject    # rsync local → cluster
+hpc-down myproject  # rsync cluster → local
 ```
 
 The interactive setup also lets you choose extra rsync flags, generate an `rsync-exclude.txt`, and optionally install a cron job for automatic periodic pushes.
