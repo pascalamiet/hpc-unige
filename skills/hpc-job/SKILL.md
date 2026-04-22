@@ -31,58 +31,38 @@ file corresponds to one or more questions below.
 
 ## Step 1 — Ask the user these questions
 
-Work through the questions in order. Ask **all of them in a single message**
-so the user can answer in one go. Do not ask one question at a time.
+Work through the questions in order. Ask **one question at a time** and wait
+for the answer before asking the next one. Do not dump the full questionnaire
+up front.
 
-Format your questions clearly, like a numbered form. Provide sensible defaults
-in square brackets wherever possible — the user can just press Enter or type
-a value to override.
+Keep the interaction stateful:
 
-```
-I'll create a job.sh for you. Answer these questions (press Enter to use the
-default shown in [brackets]):
+- Reuse anything the user already provided.
+- Ask only the next missing field needed to fill the template.
+- Provide a sensible default in brackets where possible.
+- If the user gives several answers at once, accept them and skip ahead.
+- If an answer is ambiguous, resolve that field before moving on.
 
-1. Job name (no spaces, used for output file names)  [myjob]
+Question order:
 
-2. What command will you run?
-   e.g. "python3 train.py", "Rscript analysis.R", "matlab -r run_sim"
+1. Job name (default `[myjob]`)
+2. Command to run
+3. Modules to load
+4. Partition
+5. Time limit
+6. Job type
+7. CPUs / tasks
+8. Memory
+9. GPU
+10. Email notifications
 
-3. Which software modules do you need to load?
-   e.g. "Python/3.11.3-GCCcore-12.3.0", "R/4.3.2-foss-2023a"
-   (Leave blank if you will use conda or load modules yourself)
+Example opening question:
 
-4. Partition — choose one:
-   [debug-cpu]   15 min — use while testing your script
-   shared-cpu    12 h   — most production CPU jobs
-   public-cpu    4 days — longer CPU jobs
-   shared-gpu    12 h   — GPU jobs under 12 h
-   public-gpu    4 days — longer GPU jobs
-   → Your choice:
+```text
+I'll create a job.sh for you. First question:
 
-5. Time limit (HH:MM:SS)  [00:15:00]
-   Tip: be accurate — over-requesting blocks backfill scheduling.
-
-6. Job type:
-   [1] Single-threaded  (one core — Python, R, Stata SE)
-    2  Multi-threaded   (one node, N cores — Matlab, Stata-MP, OpenMP, multiprocessing)
-    3  MPI              (N tasks across nodes — OpenMPI, OpenFOAM; only if your program uses MPI)
-   → Your choice:
-
-7. Number of CPUs / tasks:
-   (If single-threaded: how many cores? Usually 1)
-   (If multi-threaded:  how many cores does your program use?)
-   (If MPI:            how many MPI tasks?)
-   → [1]
-
-8. Memory per CPU in MB  [3000]
-   Default is 3 GB/core. Increase if your job runs out of memory.
-   (For a total memory cap instead, type "total:XXXX")
-
-9. GPU?  [no]
-   If yes, specify type and count, e.g. "1" (any), "a100:1", "titan:2"
-
-10. Email notifications when job ends or fails?  [no]
-    If yes, enter your email address:
+What command will you run?
+For example: python3 train.py, Rscript analysis.R, matlab -r run_sim
 ```
 
 ---

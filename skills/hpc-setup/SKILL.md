@@ -27,7 +27,7 @@ Optional template: `skills/hpc-setup/assets/ssh_config.template`
 ## Workflow rules
 
 - Be procedural. Move in order from account → keys → config → first login.
-- Ask for missing information in small batches, not one question at a time.
+- Ask for missing information one question at a time whenever practical.
 - If the user gives partial answers, continue from there instead of restarting.
 - Prefer key-based authentication. Password login is acceptable for the first
   test if the key is not registered yet.
@@ -42,23 +42,24 @@ Optional template: `skills/hpc-setup/assets/ssh_config.template`
 
 ## Step 1 — Start with a short intake
 
-Ask these in one message:
+Start with one intake question at a time. Use this order and wait for each
+answer before asking the next missing item:
+
+1. Cluster
+2. Operating system
+3. Whether they already have an HPC account, and their ISIS username if yes
+4. Whether they already have an SSH key on this machine
+
+Suggested prompts:
 
 ```text
-I'll guide you through the SSH setup end to end. Reply with:
+I'll guide you through the SSH setup end to end.
 
-1. Which cluster do you want to connect to? [baobab]
-   (baobab / yggdrasil / bamboo)
-
-2. What operating system are you on?
-   (macOS / Linux / Windows)
-
-3. Do you already have a UNIGE HPC account? [yes]
-   If yes, what is your ISIS username?
-
-4. Do you already have an SSH key on this machine? [not sure]
-   If you know, say whether you have ~/.ssh/id_ed25519.pub or ~/.ssh/id_rsa.pub
+First: which cluster do you want to connect to? [baobab]
+(baobab / yggdrasil / bamboo)
 ```
+
+Then ask the remaining intake questions one by one.
 
 If the user does not have an HPC account yet, stop the SSH flow and give:
 

@@ -22,18 +22,21 @@ completed job actually used. The goal is to avoid two failure modes:
 
 ## Step 1 — Get the job data
 
-Ask in a single message:
+Ask one question at a time. Start by determining which input path the user can
+provide most easily, then ask only for the next missing item.
 
-```
-To recommend better resource settings I need data from your completed job.
+Suggested flow:
 
-Option A — give me the job ID and cluster:
-  Job ID:   (e.g. 1234567)
-  Cluster:  [baobab]  (baobab / yggdrasil / bamboo)
+1. Ask whether they want to provide a job ID or paste command output.
+2. If they choose job ID, ask for the job ID.
+3. Then ask for the cluster if still needed.
+4. If they choose pasted output, ask for `seff` first and request `sacct`
+   only if needed.
 
-Option B — paste the output of:
-  seff <jobid>
-  sacct -j <jobid> --format=JobID,Elapsed,ReqMem,MaxRSS,ReqCPUS,AllocCPUS,CPUTime,State
+Example opening prompt:
+
+```text
+To recommend better resource settings, do you want to give me a job ID or paste seff output?
 ```
 
 If the user already provided a job ID, go straight to fetching the data.

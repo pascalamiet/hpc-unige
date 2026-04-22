@@ -20,17 +20,26 @@ versions are not always obvious from the software name.
 
 ## Step 1 — Gather inputs
 
-Ask the user two things in a single message:
+Ask one question at a time. If the software name is missing, ask for that
+first. Once you have it, ask for the cluster. Do not batch both prompts unless
+the user explicitly asked for a compact checklist.
 
-```
+Suggested prompts:
+
+```text
 Which software are you looking for?
-  → Name (e.g. "Python", "R", "CUDA", "PyTorch", "Stata", "Matlab"):
+For example: Python, R, CUDA, PyTorch, Stata, Matlab
+```
 
-Which cluster?  [baobab]  (baobab / yggdrasil / bamboo)
+Then:
+
+```text
+Which cluster should I check? [baobab]
+(baobab / yggdrasil / bamboo)
 ```
 
 If the user already provided the software name when invoking the skill,
-skip to Step 2 immediately.
+ask only for the cluster if needed, then continue to Step 2 immediately.
 
 ---
 
