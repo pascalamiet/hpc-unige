@@ -15,13 +15,13 @@ source ~/.zshrc   # (or ~/.bashrc)
 **Step 2 — Register a project (from any directory, any time):**
 ```bash
 cd ~/my-research-project
-hpc-sync . baobab:~/projects/my-research-project my-research
+hpc-sync . baobab:~/projects/my-research-project ALIAS
 ```
 
 **Step 3 — Use the commands:**
 ```bash
-hpc-up my-research      # push local → cluster
-hpc-down my-research    # pull cluster → local
+hpc-up ALIAS      # push local → cluster
+hpc-down ALIAS    # pull cluster → local
 ```
 
 ---
